@@ -1,10 +1,14 @@
 {
   "web": {
     "baseUrl": "http://localhost/mantisbt-1.2.19",
-    "browser": "chrome"
-  },
-  "webadmin": {
+    "browser": "chrome",
     "username": "administrator",
     "password": "123"
+  },
+  "db":{
+    "host": "localhost",
+    "name": "bugtracker",
+    "user": "root",
+    "password": ""
   }
 }

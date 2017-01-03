@@ -44,14 +44,25 @@ class ProjectHelper:
 
     # Получение списка проектов на странице
     def get_project_list(self):
-        if self.project_cache is None:  # Если кеш списка контактов пуст, то заполняем его
+        if self.project_cache is None:  # Если кеш списка проектов пуст, то заполняем его
             wd = self.app.wd
             self.open_manage_projects_page()
-            self.project_cache = []  # Создание пустого списка "project"
+            self.project_cache = []  # Создание пустого списка "project_cache"
             for row in wd.find_elements_by_xpath("//table[@class='width100'][@cellspacing='1']//tbody//tr[@class]"):
                 cells = row.find_elements_by_tag_name("td")  # Получение содержимого ячеек из строк
                 name = cells[0].text  # Имя проекта из ячейки #1
                 description = cells[4].text  # Описание проекта из ячейки #2
                 self.project_cache.append(Project(name=name, description=description))
         return list(self.project_cache)  # Возвращаем список контактов
+
+    # Удаление проекта по имени
+    def delete_project_by_name(self, name):
+        wd = self.app.wd
+        self.open_manage_projects_page()
+        wd.find_element_by_link_text('%s' % name).click()
+        wd.find_element_by_xpath("//input[@value='Delete Project']").click()
+        wd.find_element_by_xpath("//input[@value='Delete Project']").click()
+        self.open_manage_projects_page()
+        self.project_cache = None
+
 

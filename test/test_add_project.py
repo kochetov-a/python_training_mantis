@@ -11,6 +11,6 @@ def test_add_project(app, db, json_project, check_ui):
     assert sorted(old_projects_from_db, key=lambda p: p.name) == sorted(new_project_from_db, key=lambda p: p.name)
     if check_ui:    # Включение проверки графического интерфейса при наличии ключа "--check_ui"
         old_projects_from_ui = app.project.get_project_list()   # Получение списка проектов из UI
-        del old_projects_from_ui[0]     # Удаляем из списка проектов заголовок таблицы
+        del old_projects_from_ui[0]  # Удаляем из списка проектов заголовок таблицы
         # Сравниваем отсортированные по полю "name" списки проектов
         assert sorted(new_project_from_db, key=lambda p: p.name) == sorted(old_projects_from_ui, key=lambda p: p.name)

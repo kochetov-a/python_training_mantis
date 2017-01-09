@@ -7,6 +7,7 @@ import jsonpickle
 import json
 import os.path
 import importlib
+import ftputil
 
 fixture = None
 target = None
@@ -21,19 +22,49 @@ def load_config(file):
             target = json.load(f)  # Загружаем в переменную "target" содержимое файла
     return target
 
+@pytest.fixture(scope="session")
+def config(request):
+    return load_config(request.config.getoption("--target"))
+
 
 # Фикстура логина на сайт с проверкой валидности фикстуры
 @pytest.fixture
-def app(request):
+def app(request, config):
     global fixture  # Объявление глобальной переменной для фикстуры
     web_config = load_config(request.config.getoption("--target"))["web"]
     if fixture is None or not fixture.is_valid():
-        fixture = Application(browser=web_config["browser"], base_url=web_config["baseUrl"])
+        fixture = Application(browser=web_config["browser"], config=config)
     # Открываем главную страницу в любом случае
     fixture.open_home_page()
     # Выполняем логин в любом случае
     fixture.session.ensure_login(username=web_config["username"], password=web_config["password"])
     return fixture
+
+
+# Для установки FTP соеденения
+@pytest.fixture(scope="session", autouse=True)
+def configure_server(request, config):
+    install_server_configuration(config['ftp']['host'], config['ftp']['username'], config['ftp']['password'])
+    def fin():
+        restore_server_configuration(config['ftp']['host'], config['ftp']['username'], config['ftp']['password'])
+    request.addfinalizer(fin)
+
+
+def install_server_configuration(host, username, password):
+    with ftputil.FTPHost(host, username, password) as remote:
+        if remote.path.isfile("config_inc.php.bak"):
+            remote.remove("config_inc.php.bak")
+        if remote.path.isfile("config_inc.php"):
+            remote.rename("config_inc.php", "config_inc.php.bak")
+        remote.upload(os.path.join(os.path.dirname(__file__), "resources/config_inc.php"), "config_inc.php")
+
+
+def restore_server_configuration(host, username, password):
+    with ftputil.FTPHost(host, username, password) as remote:
+        if remote.path.isfile("config_inc.php.bak"):
+            if remote.path.isfile("config_inc.php"):
+                remote.remove("config_inc.php")
+            remote.rename("config_inc.php.bak", "config_inc.php")
 
 
 # Фикстура для подключения базы данных
@@ -89,3 +120,4 @@ def load_from_module(module):
 def load_from_json(file):
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data/%s.json" % file)) as f:
         return jsonpickle.decode(f.read())  # Читаем файл json
+
